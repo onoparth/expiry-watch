@@ -5,7 +5,8 @@ export const config = {
 };
 
 export default async (request) => {
-  const apiKey = Netlify.env.get("GEMINI_API_KEY");
+  const apiKey = Netlify.env.get("NETLIFY_AI_GATEWAY_KEY");
+  const baseUrl = Netlify.env.get("NETLIFY_AI_GATEWAY_URL")?.replace(/\/$/, "");
 
   if (request.method === "GET") {
     return Response.json({ ok: true, aiConfigured: Boolean(apiKey) });
@@ -17,7 +18,7 @@ export default async (request) => {
 
   if (!apiKey) {
     return Response.json({
-      error: "Gemini is not connected yet. Add GEMINI_API_KEY in your Netlify environment variables and redeploy."
+      error: "The AI assistant isn't available right now. Please try again shortly."
     }, { status: 503 });
   }
 
@@ -55,9 +56,9 @@ ${JSON.stringify(inventorySummary)}
       { role: "user", parts: [{ text: message.slice(0, 3000) }] }
     ];
 
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = new GoogleGenAI({ apiKey, httpOptions: { baseUrl } });
     const result = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3-flash-preview",
       contents,
       config: { systemInstruction, temperature: 0.5, maxOutputTokens: 700 }
     });
@@ -65,6 +66,6 @@ ${JSON.stringify(inventorySummary)}
     return Response.json({ reply: result.text || "I couldn't create a response. Please try again." });
   } catch (error) {
     console.error("Gemini request failed:", error);
-    return Response.json({ error: "The AI assistant couldn't respond. Check your Gemini API key and try again." }, { status: 500 });
+    return Response.json({ error: "The AI assistant couldn't respond. Please try again in a moment." }, { status: 500 });
   }
 };
